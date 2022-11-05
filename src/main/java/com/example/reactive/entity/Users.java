@@ -1,6 +1,7 @@
 package com.example.reactive.entity;
 
 import lombok.*;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 
 @Data
@@ -11,6 +12,7 @@ import org.springframework.data.relational.core.mapping.Column;
 @NoArgsConstructor
 public class Users {
     @Column("uuid")
+    @Id
     private String uuid;
     @Column("name")
     private String name;

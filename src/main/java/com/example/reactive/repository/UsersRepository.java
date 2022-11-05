@@ -9,5 +9,5 @@ public interface UsersRepository extends ReactiveCrudRepository<Users, String> {
     @Query(value = "SELECT * FROM USERS WHERE uuid = :uuid")
     Mono<Users> findUserByUuid(String uuid);
     @Query(value = "DELETE FROM USERS WHERE uuid = :uuid")
-    Mono<Void> deleteUserByUuid(String uuid);
+    Mono<Users> deleteUserByUuid(String uuid);
 }

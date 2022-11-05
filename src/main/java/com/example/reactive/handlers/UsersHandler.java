@@ -41,17 +41,21 @@ public class UsersHandler {
     }
 
     public Mono<ServerResponse> addUser(ServerRequest serverRequest) {
-        return serverRequest.bodyToMono(User.class)
-                .flatMap(
-                    user -> ServerResponse.ok()
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(usersService.saveUser(user), Users.class)
-        );
+        return usersService.saveUser(serverRequest.bodyToMono(User.class))
+                .flatMap(user ->
+                        ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
+                                .body(fromObject(user))
+                )
+                .switchIfEmpty(
+                        ServerResponse.status(HttpStatus.NOT_FOUND)
+                                .body(Mono.just("User not added!"), String.class)
+                );
     }
 
     public Mono<ServerResponse> updateUser(ServerRequest serverRequest) {
-        Mono<Users> userReq = serverRequest.bodyToMono(Users.class);
-        return usersService.updateUser(userReq)
+        String uuid = serverRequest.pathVariable("uuid");
+        Mono<User> userReq = serverRequest.bodyToMono(User.class);
+        return usersService.updateUser(userReq, uuid)
                 .flatMap(user ->
                     ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
                             .body(fromObject(user))
@@ -65,13 +69,9 @@ public class UsersHandler {
     public Mono<ServerResponse> deleteUser(ServerRequest serverRequest) {
         String uuid = serverRequest.pathVariable("uuid");
         return usersService.deleteUser(uuid)
-                .flatMap(user ->
-                        ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-                                .body(fromObject(user))
-                )
-                .switchIfEmpty(
-                        ServerResponse.status(HttpStatus.NOT_FOUND)
-                                .body(Mono.just("User " + uuid + " is not found!"), String.class)
-                );
+                .then(ServerResponse.status(HttpStatus.OK)
+                        .body(Mono.just("User " + uuid + " deleted!"), String.class))
+                .switchIfEmpty(ServerResponse.status(HttpStatus.NOT_FOUND)
+                        .body(Mono.just("User " + uuid + " is not found!"), String.class));
     }
 }
