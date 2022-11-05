@@ -12,7 +12,6 @@ import org.springframework.data.relational.core.mapping.Column;
 @NoArgsConstructor
 public class Users {
     @Column("uuid")
-    @Id
     private String uuid;
     @Column("name")
     private String name;
