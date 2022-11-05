@@ -4,7 +4,7 @@ import com.example.reactive.entity.Users;
 import com.example.reactive.model.User;
 import com.example.reactive.repository.UsersRepository;
 import com.example.reactive.utils.AppUtils;
-import com.example.reactive.utils.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class UsersService {
     @Autowired
     private UsersRepository usersRepository;
@@ -31,32 +32,24 @@ public class UsersService {
                     user.setUuid(UUID.randomUUID().toString());
                     return user;
                 })
-                .flatMap(usersRepository::save);
+                .flatMap(usersRepository::save)
+                .doOnNext(user -> log.info("User Added: " + user.toString()));
     }
 
     public Mono<Users> updateUser(Mono<User> userMono, String uuid) {
-//        Mono<Users> updateUser = userMono.flatMap(user -> {
-//            System.out.println("asdasdasdasda "+user);
-//            Mono<Users> userFind = usersRepository.findUserByUuid(user.getUuid()).doOnNext(System.out::println);
-//            userFind.flatMap(currentUser -> {
-//                System.out.println("asdsad "+currentUser);
-//                currentUser.setUuid(user.getUuid());
-//                currentUser.setName(user.getName());
-//                currentUser.setPhone(user.getPhone());
-//                currentUser.setEmail(user.getEmail());
-//                return usersRepository.save(currentUser);
-//            }).doOnNext(System.out::println);
-//            return userFind;
-//        }).doOnNext(System.out::println);
-//        return updateUser;
         return usersRepository.findUserByUuid(uuid)
+                .doOnNext(System.out::println)
                 .flatMap(user -> userMono.map(AppUtils::modelToEntity))
+                .doOnNext(System.out::println)
                 .doOnNext(user -> user.setUuid(uuid))
-                .flatMap(usersRepository::save);
+                .doOnNext(System.out::println)
+                .flatMap(usersRepository::save)
+                .onErrorContinue((e, element) -> {
+                    System.out.println(e);
+                });
     }
 
     public Mono<Users> deleteUser(String uuid) {
-        return usersRepository.findUserByUuid(uuid)
-                .flatMap(user -> usersRepository.deleteUserByUuid(user.getUuid()));
+        return usersRepository.deleteUserByUuid(uuid);
     }
 }

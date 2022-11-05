@@ -3,6 +3,7 @@ package com.example.reactive.handlers;
 import com.example.reactive.entity.Users;
 import com.example.reactive.model.User;
 import com.example.reactive.service.UsersService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -11,12 +12,21 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
+import java.util.Objects;
+
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 
 @Component
+@Slf4j
 public class UsersHandler {
     @Autowired
     private UsersService usersService;
+
+    private Mono<ServerResponse> responseNotFound (String uuid) {
+        log.error("User Not Found: " + uuid);
+        return ServerResponse.status(HttpStatus.NOT_FOUND)
+                .body(Mono.just("User " + uuid + " is not found!"), String.class);
+    }
 
     public Mono<ServerResponse> getAllUsers(ServerRequest serverRequest) {
         return ServerResponse
@@ -29,15 +39,14 @@ public class UsersHandler {
     public Mono<ServerResponse> getUser(ServerRequest serverRequest) {
         String uuid = serverRequest.pathVariable("uuid");
         return usersService.getUserByUuid(uuid)
-                .flatMap(user ->
-                        ServerResponse.ok()
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .body(fromObject(user))
+                .flatMap(user -> {
+                            log.info("User Found: " + user.toString());
+                            return ServerResponse.ok()
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .body(fromObject(user));
+                        }
                 )
-                .switchIfEmpty(
-                        ServerResponse.status(HttpStatus.NOT_FOUND)
-                                .body(Mono.just("User " + uuid + " is not found!"), String.class)
-                );
+                .switchIfEmpty(responseNotFound(uuid));
     }
 
     public Mono<ServerResponse> addUser(ServerRequest serverRequest) {
@@ -60,18 +69,17 @@ public class UsersHandler {
                     ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
                             .body(fromObject(user))
                 )
-                .switchIfEmpty(
-                        ServerResponse.status(HttpStatus.NOT_FOUND)
-                            .body(Mono.just("User not found!"), String.class)
-                );
+                .switchIfEmpty(responseNotFound(uuid));
     }
 
     public Mono<ServerResponse> deleteUser(ServerRequest serverRequest) {
         String uuid = serverRequest.pathVariable("uuid");
-        return usersService.deleteUser(uuid)
-                .then(ServerResponse.status(HttpStatus.OK)
-                        .body(Mono.just("User " + uuid + " deleted!"), String.class))
-                .switchIfEmpty(ServerResponse.status(HttpStatus.NOT_FOUND)
-                        .body(Mono.just("User " + uuid + " is not found!"), String.class));
+        return usersService.getUserByUuid(uuid)
+                .flatMap(user ->
+                        usersService.deleteUser(user.getUuid())
+                                .then(ServerResponse.status(HttpStatus.OK)
+                                        .body(Mono.just("User " + user.getUuid() + " has been deleted!"), String.class))
+                )
+                .switchIfEmpty(responseNotFound(uuid));
     }
 }
