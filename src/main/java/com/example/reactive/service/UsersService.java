@@ -33,20 +33,25 @@ public class UsersService {
                     return user;
                 })
                 .flatMap(usersRepository::save)
-                .doOnNext(user -> log.info("User Added: " + user.toString()));
+                .doOnNext(user -> log.info("User Added: " + user));
     }
 
     public Mono<Users> updateUser(Mono<User> userMono, String uuid) {
-        return usersRepository.findUserByUuid(uuid)
-                .doOnNext(System.out::println)
-                .flatMap(user -> userMono.map(AppUtils::modelToEntity))
-                .doOnNext(System.out::println)
-                .doOnNext(user -> user.setUuid(uuid))
-                .doOnNext(System.out::println)
-                .flatMap(usersRepository::save)
-                .onErrorContinue((e, element) -> {
-                    System.out.println(e);
+        return userMono.map(AppUtils::modelToEntity)
+                .map(user -> {
+                    user.setUuid(uuid);
+                    log.info("User to be updated: " + user);
+                    usersRepository.save(user);
+                    log.info("User Updated: " + user);
+                    return user;
                 });
+//        return usersRepository.findUserByUuid(uuid)
+//                .flatMap(user -> userMono.map(AppUtils::modelToEntity))
+//                .doOnNext(user -> user.setUuid(uuid))
+//                .flatMap(usersRepository::save)
+//                .onErrorContinue((e, element) -> {
+//                    System.out.println(e);
+//                });
     }
 
     public Mono<Users> deleteUser(String uuid) {

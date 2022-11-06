@@ -64,11 +64,20 @@ public class UsersHandler {
     public Mono<ServerResponse> updateUser(ServerRequest serverRequest) {
         String uuid = serverRequest.pathVariable("uuid");
         Mono<User> userReq = serverRequest.bodyToMono(User.class);
-        return usersService.updateUser(userReq, uuid)
+//        return usersService.updateUser(userReq, uuid)
+//                .flatMap(user ->
+//                    ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
+//                            .body(fromObject(user))
+//                )
+//                .switchIfEmpty(responseNotFound(uuid));
+        return usersService.getUserByUuid(uuid)
                 .flatMap(user ->
-                    ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-                            .body(fromObject(user))
-                )
+                        usersService.updateUser(userReq, uuid)
+                                .then(ServerResponse
+                                        .ok()
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .body(fromObject(user))
+                                ))
                 .switchIfEmpty(responseNotFound(uuid));
     }
 
