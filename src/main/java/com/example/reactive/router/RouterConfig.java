@@ -1,5 +1,6 @@
 package com.example.reactive.router;
 
+import com.example.reactive.handlers.PokemonHandler;
 import com.example.reactive.handlers.UsersHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +14,7 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 @Configuration
 public class RouterConfig {
     private String USERS_END_POINT = "/api/users";
+
     @Bean
     public RouterFunction<ServerResponse> usersRoutes(UsersHandler usersHandler) {
         return RouterFunctions.
@@ -25,7 +27,13 @@ public class RouterConfig {
                 .andRoute(PUT(USERS_END_POINT + "/{uuid}").and(accept(MediaType.APPLICATION_JSON))
                         , usersHandler::updateUser)
                 .andRoute(DELETE(USERS_END_POINT + "/{uuid}").and(accept(MediaType.APPLICATION_JSON))
-                        , usersHandler::deleteUser)
-                ;
+                        , usersHandler::deleteUser);
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> pokemonRoutes(PokemonHandler pokemonHandler) {
+        return RouterFunctions.
+                route(GET("/api/pokemon/{name}").and(accept(MediaType.APPLICATION_JSON))
+                        , pokemonHandler::getPokemonDetailByName);
     }
 }
