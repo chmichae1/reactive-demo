@@ -11,6 +11,7 @@ import org.springframework.data.relational.core.mapping.Column;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Users {
+    @Id
     @Column("uuid")
     private String uuid;
     @Column("name")

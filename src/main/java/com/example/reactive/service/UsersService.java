@@ -40,18 +40,10 @@ public class UsersService {
         return userMono.map(AppUtils::modelToEntity)
                 .map(user -> {
                     user.setUuid(uuid);
-                    log.info("User to be updated: " + user);
-                    usersRepository.save(user);
-                    log.info("User Updated: " + user);
                     return user;
-                });
-//        return usersRepository.findUserByUuid(uuid)
-//                .flatMap(user -> userMono.map(AppUtils::modelToEntity))
-//                .doOnNext(user -> user.setUuid(uuid))
-//                .flatMap(usersRepository::save)
-//                .onErrorContinue((e, element) -> {
-//                    System.out.println(e);
-//                });
+                })
+                .flatMap(usersRepository::save)
+                .doOnNext(user -> log.info("User Updated: " + user));
     }
 
     public Mono<Users> deleteUser(String uuid) {

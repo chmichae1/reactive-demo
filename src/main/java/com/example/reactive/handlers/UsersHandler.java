@@ -12,8 +12,6 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
-import java.util.Objects;
-
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 
 @Component
@@ -64,19 +62,15 @@ public class UsersHandler {
     public Mono<ServerResponse> updateUser(ServerRequest serverRequest) {
         String uuid = serverRequest.pathVariable("uuid");
         Mono<User> userReq = serverRequest.bodyToMono(User.class);
-//        return usersService.updateUser(userReq, uuid)
-//                .flatMap(user ->
-//                    ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
-//                            .body(fromObject(user))
-//                )
-//                .switchIfEmpty(responseNotFound(uuid));
         return usersService.getUserByUuid(uuid)
                 .flatMap(user ->
                         usersService.updateUser(userReq, uuid)
-                                .then(ServerResponse
+                                .flatMap(userUpdated -> {
+                                    return ServerResponse
                                         .ok()
                                         .contentType(MediaType.APPLICATION_JSON)
-                                        .body(fromObject(user))
+                                        .body(fromObject(userUpdated));
+                                    }
                                 ))
                 .switchIfEmpty(responseNotFound(uuid));
     }
