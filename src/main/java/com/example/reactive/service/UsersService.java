@@ -27,11 +27,9 @@ public class UsersService {
     }
 
     public Mono<Users> saveUser(Mono<User> userMono) {
-        return userMono.map(AppUtils::modelToEntity)
-                .map(user -> {
-                    user.setUuid(UUID.randomUUID().toString());
-                    return user;
-                })
+        return userMono
+                .map(AppUtils::modelToEntity)
+                .map(this::constructUser)
                 .flatMap(usersRepository::save)
                 .doOnNext(user -> log.info("User Added: " + user));
     }
@@ -40,6 +38,7 @@ public class UsersService {
         return userMono.map(AppUtils::modelToEntity)
                 .map(user -> {
                     user.setUuid(uuid);
+                    user.setName(user.getName().toUpperCase());
                     return user;
                 })
                 .flatMap(usersRepository::save)
@@ -48,5 +47,12 @@ public class UsersService {
 
     public Mono<Users> deleteUser(String uuid) {
         return usersRepository.deleteUserByUuid(uuid);
+    }
+
+    private Users constructUser(Users users) {
+        users.setUuid(UUID.randomUUID().toString());
+        users.setName(users.getName().toUpperCase());
+        users.setAsNew();
+        return users;
     }
 }

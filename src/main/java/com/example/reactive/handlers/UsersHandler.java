@@ -52,10 +52,6 @@ public class UsersHandler {
                 .flatMap(user ->
                         ServerResponse.ok().contentType(MediaType.APPLICATION_JSON)
                                 .body(fromObject(user))
-                )
-                .switchIfEmpty(
-                        ServerResponse.status(HttpStatus.NOT_FOUND)
-                                .body(Mono.just("User not added!"), String.class)
                 );
     }
 
